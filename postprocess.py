@@ -210,6 +210,46 @@ class PostProcessor:
             json.dump(json_data, f, indent=2)
         
         print(f"Results saved to {output_file}")
+        
+        # Load metrics from metrics.json
+        metrics_file = os.path.join(self.session_dir, 'metrics.json')
+        with open(metrics_file, 'r') as f:
+            metrics = json.load(f)
+        
+        # Calculate gaze percentages
+        total_samples = len(self.looking_at)
+        robot_count = sum(1 for obj in self.looking_at.values() if obj == "robot")
+        cards_count = sum(1 for obj in self.looking_at.values() if obj == "cards")
+        
+        robot_percentage = (robot_count / total_samples * 100) if total_samples > 0 else 0.0
+        cards_percentage = (cards_count / total_samples * 100) if total_samples > 0 else 0.0
+        
+        # Create nonverbal behavior data
+        nonverbal_data = {
+            "gaze_cards_percentage": round(cards_percentage, 1),
+            "gaze_robot_percentage": round(robot_percentage, 1),
+            "gaze_shifts_per_second": round(metrics.get('gaze_shifts_per_second', 0.0), 1),
+            "gaze_mean_fixation_duration": round(metrics.get('mean_fixation_duration', 0.0), 1),
+            "head_pose_shifts_rate_per_second": 0.0,  # Placeholder value
+            "blinks_per_second": round(metrics.get('blinks_per_second', 0.0), 1)
+        }
+        
+        # Save nonverbal behavior data to session directory
+        nonverbal_file = os.path.join(self.session_dir, 'nonverbal_behavior.json')
+        with open(nonverbal_file, 'w') as f:
+            json.dump(nonverbal_data, f, indent=2)
+        
+        # Create data directory if it doesn't exist
+        data_dir = os.path.abspath('./data')
+        os.makedirs(data_dir, exist_ok=True)
+        
+        # Save copy to data directory
+        data_file = os.path.join(data_dir, 'nonverbal_behavior.json')
+        with open(data_file, 'w') as f:
+            json.dump(nonverbal_data, f, indent=2)
+        
+        print(f"Nonverbal behavior data saved to {nonverbal_file}")
+        print(f"Copy saved to {data_file}")
 
 def main():
     # Find the most recent session directory
